@@ -1,0 +1,85 @@
+#!/bin/bash
+DEMO=other-demo
+
+tarry() {
+	stty -echo
+	read -n1 JUNK
+}
+
+dally() {
+	sleep 0.4
+}
+
+prompt() {
+	echo -en "\033[1;32mjhunt@${DEMO}\033[0m \033[1;34m~\033[0m \033[1;33m→\033[0m "
+}
+
+save() {
+	echo -en "\033[s"
+}
+
+restore() {
+	echo -en "\033[u"
+}
+
+cmd() {
+	save ; prompt ; tarry
+	restore ; prompt ; echo "$@" ; dally
+	restore ; prompt ; echo "$@" ; $@ ; echo
+}
+
+fake() {
+	save ; prompt ; tarry
+	restore ; prompt ; echo "$@" ; dally
+}
+
+go 
+
+fin() {
+	clear; tarry
+	echo ; echo ; echo ; echo ; echo ; echo ; echo ; echo ; echo ; echo ; echo
+	echo "                                                   fin"
+	echo ; echo ; echo ; echo ; echo ; echo ; echo ; echo ; echo ; echo ; echo
+	tarry
+	stty echo
+}
+
+title() {
+	echo -ne "\033]0;$1\007"
+}
+
+clear
+title VAULT-UI
+echo "loading vault ui demo..."
+(cf set-target -f boston
+ cf target -o jhunt -s vault-other-demo) >/dev/null 2>&1
+
+clear
+fake cf target
+(cf target -o jhunt -s vault-other-demo >/dev/null) 2>&1
+cf target ; echo
+
+fake cd ~/cf/cf-vault-ui
+cd ~/cf/cf-vault-ui
+cmd cf push --no-start
+
+tarry; clear
+cmd cf create-service vault shared vault-of-secrets
+cmd cf services
+
+tarry; clear
+cmd cf bind-service vault vault-of-secrets
+cmd cf start vault
+cmd open https://vault.apps.cfna2018.starkandwayne.com
+
+clear;
+fake cd ~/cf/cf-apigen
+cd ~/cf/cf-apigen
+cmd cf push --no-start
+
+tarry; clear
+cmd cf bind-service apigen vault-of-secrets
+cmd cf start apigen
+cmd open https://apigen.apps.cfna2018.starkandwayne.com
+
+tarry; fin
